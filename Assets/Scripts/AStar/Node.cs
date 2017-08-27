@@ -4,18 +4,27 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class Node {
-    public delegate void OnChange();
+    public delegate void OnChange(Node n);
     public OnChange onChangeCallback;
     public bool walkable;
     public Vector2 worldPosition;
     public Ball ball;
     public GameObject slot;
+    public int gridX;
+    public int gridY;
 
-    public Node(bool _walkable, Vector2 _worldPos)
+
+    public int gCost;
+    public int hCost;
+    public Node parent;
+
+    public Node(bool _walkable, Vector2 _worldPos, int _gridX, int _gridY)
     {
         walkable = _walkable;
         worldPosition = _worldPos;
         ball = null;
+        gridX = _gridX;
+        gridY = _gridY;
     }
 
     public void SetBall(Ball _ball)
@@ -30,7 +39,7 @@ public class Node {
         Grid.instance.FreeSlots--;
         if (onChangeCallback != null)
         {
-            onChangeCallback.Invoke();
+            onChangeCallback.Invoke(this);
         }
     }
 
@@ -44,7 +53,25 @@ public class Node {
         Grid.instance.FreeSlots++;
         if (onChangeCallback != null)
         {
-            onChangeCallback.Invoke();
+            onChangeCallback.Invoke(this);
         }
+    }
+
+    public int fCost
+    {
+        get
+        {
+            return gCost + hCost;
+        }
+    }
+
+    public void RegisterOnChange(OnChange cb)
+    {
+        onChangeCallback += cb;
+    }
+
+    public void UnRegisterOnChange(OnChange cb)
+    {
+        onChangeCallback -= cb;
     }
 }
