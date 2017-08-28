@@ -15,6 +15,10 @@ public class GameController : MonoBehaviour {
     int mustBeSameColor = 5;
     [SerializeField]
     Text scoreField;
+    [SerializeField]
+    float animationMoveSpeedDelay = 0.1f;
+
+    bool isAnimationInProcess = false;
 
     int score = 0;
 
@@ -96,10 +100,9 @@ public class GameController : MonoBehaviour {
             {
                 break; //Если не получается, то прерываем цикл
             }
-            //preBalls.Remove(preBalls[0]); //Если шарик разместили, то удаляем его из списка предстоящих к размещению шаров
             generated++; //считаем сколько разместили шариков
         }
-        preBalls.Clear();
+        preBalls.Clear(); //Чистим список преШаров
         if (generated < 3)
             return false; //возвращаем ложь если смогли сгенерировать 
         else
@@ -108,7 +111,7 @@ public class GameController : MonoBehaviour {
 
     void OnSlotClicked()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && !isAnimationInProcess)
         {         
             GameObject go = EventSystem.current.currentSelectedGameObject;
             if (go == null || go.transform.parent == null)
@@ -147,30 +150,8 @@ public class GameController : MonoBehaviour {
                     List<Node> path = Pathfinding.Instance.FindPath(hand.node, slot.node);
                     if (path != null)
                     {
-                        Ball tempBall = null; //Если до этого в ячейке был предварительный шар, то на всякий сохраняем его в темп переменную
-                        if (slot.node.preBall != null)
-                        {
-                            tempBall = slot.node.preBall;
-                        }
-                        slot.node.SetBall(hand.node.ball);
-                        hand.node.RemoveBall();
-                        if (!FindSameAndColapse(slot.node))
-                        {
-                            if (!PlaceBalls()) //Пробуем разместить шарики. Если вернулось false то
-                            {
-                                GameOver(); //Игра окончена
-                            } //если true то продолжаем
-                            GenerateBalls(); //Генерируем шарики на след ход
-                        } else
-                        {
-                            //Удаление было успешно. Нужно проверить а был ли в ключевой ячейке до этого преБалл
-                            //И если был то вернуть его назад
-                            if (tempBall != null)
-                            {
-                                slot.node.SetPreBall(tempBall);
-                            }
-                        }
-                        hand = null; //освобождаем руку
+                        //Старт перемещения шарика. После перемещения вызывается проверка на 5 в ряд.
+                        StartCoroutine(MoveBall(hand.node, slot.node, path));
                     }
                     else
                     {
@@ -180,6 +161,54 @@ public class GameController : MonoBehaviour {
                 }
             }
         }
+    }
+
+    IEnumerator MoveBall(Node startNode, Node endNode, List<Node> path)
+    {
+        isAnimationInProcess = true; //Говорим что началась анимация (чтобы блокировать в ее время любые дейситвия)
+        Ball tempBall = null; //Если до этого в ячейке был предварительный шар, то на всякий сохраняем его в темп переменную
+        if (endNode.preBall != null)
+        {
+            tempBall = endNode.preBall;
+        }
+        int i = -1;
+        
+        Node currentNode = startNode;
+        Ball startBall = startNode.ball.CopyBall();
+        startNode.RemoveBall();
+        while (currentNode != endNode) {
+            i++;
+            currentNode = path[i];
+            path[i].SetPreBall(startBall);
+            if (i>0)
+                path[i-1].RemovePreBall();
+            yield return new WaitForSeconds(animationMoveSpeedDelay);
+        }
+        isAnimationInProcess = false; //Конец анимации
+        endNode.SetBall(startBall);
+        currentNode = path[0];
+        foreach(Node p in path)
+        {
+            p.RemovePreBall();
+        }
+        if (!FindSameAndColapse(endNode)) // <--------------------------------ПРОВЕРКА на 5 в ряд!!!!!!!!!!!!!
+        {
+            if (!PlaceBalls()) //Пробуем разместить шарики. Если вернулось false то
+            {
+                GameOver(); //Игра окончена
+            } //если true то продолжаем
+            GenerateBalls(); //Генерируем шарики на след ход
+        }
+        else
+        {
+            //Удаление было успешно. Нужно проверить а был ли в ключевой ячейке до этого преБалл
+            //И если был то вернуть его назад
+            if (tempBall != null)
+            {
+                endNode.SetPreBall(tempBall);
+            }
+        }
+        hand = null; //освобождаем руку
     }
 
     private void GameOver()
