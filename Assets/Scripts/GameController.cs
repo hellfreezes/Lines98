@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class GameController : MonoBehaviour {
     [SerializeField]
-    Ball[] balls;
+    Sprite[] balls;
     [SerializeField]
     GameObject gameDesk;
     [SerializeField]
@@ -17,6 +17,8 @@ public class GameController : MonoBehaviour {
     Text scoreField;
 
     int score = 0;
+
+    private List<Ball> preBalls = new List<Ball>();
 
     private Slot hand = null;
 
@@ -40,6 +42,8 @@ public class GameController : MonoBehaviour {
 
 
         GenerateBalls(); //Генерируем первые шары
+        PlaceBalls();
+        GenerateBalls();
     }
 	
 	// Update is called once per frame
@@ -58,21 +62,46 @@ public class GameController : MonoBehaviour {
         }
     }
 
-    public bool GenerateBalls()
+    public void GenerateBalls()
+    {
+        int freeBalls = Grid.instance.freeSlotsList.Count;
+        for (int i = 1; i<= ballsAtTurn; i++)
+        {
+            if (freeBalls > 0)
+            {
+                int code = Random.Range(0, balls.Length);
+                Vector2 coords = Grid.instance.GetCoordsForBall();
+                Ball b = new Ball();
+                b.code = code;
+                b.icon = balls[code];
+                b.coords = coords;
+                preBalls.Add(b); //Генерируем новый шарик на будущее и добавляем их в список сгенерированных
+                Grid.instance.AddPreBall(b);
+                //freeBalls--; //Контролирум количество будущих свободных слотов (и не трогаем число свободных слотов в настоящее время)
+            } else
+            { //свободные слоты кончилис. прервать цикл
+                break;
+            }
+        }
+    }
+
+    bool PlaceBalls()
     {
         hand = null;
         int generated = 0; //считаем сколько шаров получилось сгенерировать
-        for (int i = 1; i<= ballsAtTurn; i++)
+
+        foreach (Ball ball in preBalls)
         {
-            int newBall = Random.Range(0, balls.Length);
-            if (!Grid.instance.AddBall(balls[newBall]))
+            if (!Grid.instance.AddBall(ball)) //Пробуем разместить шарик
             {
-                break;
+                break; //Если не получается, то прерываем цикл
             }
-            generated++;
+            //preBalls.Remove(preBalls[0]); //Если шарик разместили, то удаляем его из списка предстоящих к размещению шаров
+            generated++; //считаем сколько разместили шариков
         }
+        preBalls.Clear();
         if (generated < 3)
-            return false; //возвращаем ложь если смогли сгенерировать только один шар
+            return false; //возвращаем ложь если смогли сгенерировать 
         else
             return true;
     }
@@ -118,16 +147,30 @@ public class GameController : MonoBehaviour {
                     List<Node> path = Pathfinding.Instance.FindPath(hand.node, slot.node);
                     if (path != null)
                     {
+                        Ball tempBall = null; //Если до этого в ячейке был предварительный шар, то на всякий сохраняем его в темп переменную
+                        if (slot.node.preBall != null)
+                        {
+                            tempBall = slot.node.preBall;
+                        }
                         slot.node.SetBall(hand.node.ball);
                         hand.node.RemoveBall();
                         if (!FindSameAndColapse(slot.node))
                         {
-                            if (!GenerateBalls())
+                            if (!PlaceBalls()) //Пробуем разместить шарики. Если вернулось false то
                             {
-                                GameOver();
+                                GameOver(); //Игра окончена
+                            } //если true то продолжаем
+                            GenerateBalls(); //Генерируем шарики на след ход
+                        } else
+                        {
+                            //Удаление было успешно. Нужно проверить а был ли в ключевой ячейке до этого преБалл
+                            //И если был то вернуть его назад
+                            if (tempBall != null)
+                            {
+                                slot.node.SetPreBall(tempBall);
                             }
                         }
-                        hand = null;
+                        hand = null; //освобождаем руку
                     }
                     else
                     {

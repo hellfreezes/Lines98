@@ -9,6 +9,7 @@ public class Node {
     public bool walkable;
     public Vector2 worldPosition;
     public Ball ball;
+    public Ball preBall;
     public GameObject slot;
     public int gridX;
     public int gridY;
@@ -27,8 +28,27 @@ public class Node {
         gridY = _gridY;
     }
 
+    public void SetPreBall(Ball _ball)
+    {
+        preBall = _ball;
+        if (preBall == null)
+            return;
+        Image icon = slot.transform.Find("SlotButton").transform.Find("PreImage").GetComponent<Image>();
+        icon.sprite = preBall.icon;
+        icon.gameObject.SetActive(true);
+    }
+
+    public void RemovePreBall()
+    {
+        Image icon = slot.transform.Find("SlotButton").transform.Find("PreImage").GetComponent<Image>();
+        icon.sprite = null;
+        preBall = null;
+        icon.gameObject.SetActive(false);
+    }
+
     public void SetBall(Ball _ball)
     {
+        RemovePreBall();
         ball = _ball;
         if (ball == null)
             return;
@@ -36,7 +56,7 @@ public class Node {
         Image icon = slot.transform.Find("SlotButton").transform.Find("Image").GetComponent<Image>();
         icon.sprite = ball.icon;
         icon.gameObject.SetActive(true);
-        Grid.instance.FreeSlots--;
+        Grid.instance.freeSlotsList.Remove(this);
         if (onChangeCallback != null)
         {
             onChangeCallback.Invoke(this);
@@ -50,7 +70,7 @@ public class Node {
         Image icon = slot.transform.Find("SlotButton").transform.Find("Image").GetComponent<Image>();
         icon.sprite = null;
         icon.gameObject.SetActive(false);
-        Grid.instance.FreeSlots++;
+        Grid.instance.freeSlotsList.Add(this);
         if (onChangeCallback != null)
         {
             onChangeCallback.Invoke(this);

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Ball", menuName = "Lines/Ball")]
-public class Ball : ScriptableObject {
+public class Ball {
     public Sprite icon;
     public int code;
+    public Vector2 coords;
 }

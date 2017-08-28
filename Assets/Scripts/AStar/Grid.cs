@@ -11,11 +11,10 @@ public class Grid : MonoBehaviour {
     public static Grid instance;
 
     Node[,] grid;
+    public List<Node> freeSlotsList = new List<Node>();
 
     int gridSizeX;
     int gridSizeY;
-
-    int freeSlots;
 
     public int GridSizeX
     {
@@ -30,19 +29,6 @@ public class Grid : MonoBehaviour {
         get
         {
             return gridSizeY;
-        }
-    }
-
-    public int FreeSlots
-    {
-        get
-        {
-            return freeSlots;
-        }
-
-        set
-        {
-            freeSlots = value;
         }
     }
 
@@ -64,7 +50,6 @@ public class Grid : MonoBehaviour {
 
         gridSizeX = (int)gridWorldSize.x;
         gridSizeY = (int)gridWorldSize.y;
-        freeSlots = gridSizeX * gridSizeY;
         CreateGrid();
     }
 
@@ -82,6 +67,7 @@ public class Grid : MonoBehaviour {
                 newSlot.name = "Slot[" + x + ", " + y + "]";
                 newSlot.GetComponent<Slot>().node = grid[x, y];
                 grid[x, y].slot = newSlot;
+                freeSlotsList.Add(grid[x, y]); //добавляем вновь созданный нод в список свободных слотов
             }
         }
     }
@@ -109,25 +95,64 @@ public class Grid : MonoBehaviour {
         return neighbours;
     }
 
+    public Vector2 GetCoordsForBall()
+    {
+        int x = 0;
+        int y = 0;
+        bool isFree = false;
+        while (!isFree)
+        {
+            Node randomNode = freeSlotsList[Random.Range(0, freeSlotsList.Count - 1)];
+            x = randomNode.gridX;
+            y = randomNode.gridY;
+            isFree = randomNode.walkable;
+            if (isFree)
+            {
+                break;
+            }
+        }
+        return new Vector2(x, y);
+    }
+
+    public void AddPreBall(Ball ball)
+    {
+        int x = (int)ball.coords.x;
+        int y = (int)ball.coords.y;
+        grid[x, y].SetPreBall(ball);
+    }
+
     public bool AddBall(Ball ball)
     {
-        if (freeSlots > 0)
+        if (freeSlotsList.Count > 0)
         {
             int x, y;
             bool isFree = false;
-            while (!isFree)
+
+            x = (int)ball.coords.x;
+            y = (int)ball.coords.y;
+            isFree = grid[x, y].walkable;
+
+            if (isFree) //Ячейка осталась свободной поэтому можно смело добавлять туда шарик и пробовать удалить шарики в ряду
             {
-                x = Random.Range(0, gridSizeX);
-                y = Random.Range(0, gridSizeY);
-                isFree = grid[x, y].walkable;
-                if (isFree)
-                {
-                    grid[x, y].SetBall(ball);
-                    GameController.Instance.FindSameAndColapse(grid[x, y]);
-                    break;
-                }
+                grid[x, y].SetBall(ball);
+                GameController.Instance.FindSameAndColapse(grid[x, y]);
+                return true; //Свободное место было и шарик добавлен
             }
-            return true; //Свободное место было и шарик добавлен
+            else //К моменту когда пришел момент размещать шарик, его место уже занял шар передвинутый туда пользователем
+            {
+                while (!isFree)
+                { //генерируем ячейку в которой надо появиться заново
+                    Node randomNode = freeSlotsList[Random.Range(0, freeSlotsList.Count - 1)];
+                    isFree = randomNode.walkable;
+                    if (isFree)
+                    {
+                        randomNode.SetBall(ball);
+                        GameController.Instance.FindSameAndColapse(randomNode);
+                        break;
+                    }
+                }
+                return true; //Шарик в конечном счете добавлен, возвращаем true
+            }
         }
         return false; //Нет свободного места, шарик не добавлен
     }
