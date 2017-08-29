@@ -127,7 +127,12 @@ public class GameController : MonoBehaviour {
                     //Шарик не был выбран до этого
                     //Или шарик был выбран, но клинули по другому шарику
                     //выбираем шарик
+                    if (hand != null)
+                    {   //Если шарик до этого был выбран
+                        hand.DeselectBall();
+                    }
                     hand = slot;
+                    slot.SelectBall();
                 }
                 else
                 {
@@ -137,6 +142,7 @@ public class GameController : MonoBehaviour {
                         //кликнули по томуже шарику
                         //снять выделение
                         hand = null;
+                        slot.DeselectBall();
                     }
                 }
 

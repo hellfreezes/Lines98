@@ -67,6 +67,7 @@ public class Grid : MonoBehaviour {
                 newSlot.name = "Slot[" + x + ", " + y + "]";
                 newSlot.GetComponent<Slot>().node = grid[x, y];
                 grid[x, y].slot = newSlot;
+                grid[x, y].RemoveBall();
                 freeSlotsList.Add(grid[x, y]); //добавляем вновь созданный нод в список свободных слотов
             }
         }
