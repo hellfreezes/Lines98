@@ -7,7 +7,7 @@ public class Slot : MonoBehaviour {
     public Node node;
 
     public Transform ballImage;
-    Animator anim;
+    public Animator anim;
 
     void Start()
     {
@@ -23,8 +23,8 @@ public class Slot : MonoBehaviour {
     {
         anim.SetBool("isSelected", false);
     }
-    public void DieAndRemoveBall()
+    public void DieAndRemoveBall() //<----------------Удаление теперь тут!
     {
-        anim.SetBool("isDie", true);
+        anim.SetBool("isDie", true); //В конце этой анимации
     }
 }

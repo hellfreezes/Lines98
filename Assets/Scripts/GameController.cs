@@ -162,6 +162,7 @@ public class GameController : MonoBehaviour {
                     else
                     {
                         Debug.Log("Путь не найден");
+                        hand.DeselectBall();
                         hand = null;
                     }
                 }
@@ -261,7 +262,8 @@ public class GameController : MonoBehaviour {
         {
             foreach (Node n in toColapse)
             {
-                n.RemoveBall();
+                //n.RemoveBall();
+                n.slot.GetComponent<Slot>().DieAndRemoveBall();
                 score += 1;
                 scoreField.text = "Score: " + score;
             }

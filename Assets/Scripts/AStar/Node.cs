@@ -69,6 +69,7 @@ public class Node {
         ball = null;
         Image icon = slot.transform.Find("SlotButton").transform.Find("Image").GetComponent<Image>();
         icon.sprite = null;
+        icon.gameObject.transform.localScale = new Vector3(1, 1, 1);
         icon.gameObject.SetActive(false);
         Grid.instance.freeSlotsList.Add(this);
         if (onChangeCallback != null)
