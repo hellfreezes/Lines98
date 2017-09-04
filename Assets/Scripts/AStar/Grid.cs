@@ -67,8 +67,9 @@ public class Grid : MonoBehaviour {
                 newSlot.name = "Slot[" + x + ", " + y + "]";
                 newSlot.GetComponent<Slot>().node = grid[x, y];
                 grid[x, y].slot = newSlot;
-                grid[x, y].RemoveBall();
-                freeSlotsList.Add(grid[x, y]); //добавляем вновь созданный нод в список свободных слотов
+                grid[x, y].RemoveBall();//добавляем вновь созданный нод в список свободных слотов
+                //freeSlotsList.Add(grid[x, y]); //добавляем вновь созданный нод в список свободных слотов
+                //Debug.Log("Добавлена свободная ячека. Теперь их: " + freeSlotsList.Count);
             }
         }
     }
@@ -103,13 +104,20 @@ public class Grid : MonoBehaviour {
         bool isFree = false;
         while (!isFree)
         {
-            Node randomNode = freeSlotsList[Random.Range(0, freeSlotsList.Count - 1)];
-            x = randomNode.gridX;
-            y = randomNode.gridY;
-            isFree = randomNode.walkable;
-            if (isFree)
+            //Debug.Log("in GetCoordsForBall");
+            if (freeSlotsList.Count > 0)
             {
-                break;
+                Node randomNode = freeSlotsList[Random.Range(0, freeSlotsList.Count - 1)];
+                x = randomNode.gridX;
+                y = randomNode.gridY;
+                isFree = randomNode.walkable;
+                if (isFree)
+                {
+                    break;
+                }
+            } else
+            {
+                return new Vector2(-1,-1);
             }
         }
         return new Vector2(x, y);
@@ -143,6 +151,7 @@ public class Grid : MonoBehaviour {
             {
                 while (!isFree)
                 { //генерируем ячейку в которой надо появиться заново
+                    //Debug.Log("in AddPreBall");
                     Node randomNode = freeSlotsList[Random.Range(0, freeSlotsList.Count - 1)];
                     isFree = randomNode.walkable;
                     if (isFree)

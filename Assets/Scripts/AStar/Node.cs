@@ -36,6 +36,7 @@ public class Node {
         Image icon = slot.transform.Find("SlotButton").transform.Find("PreImage").GetComponent<Image>();
         icon.sprite = preBall.icon;
         icon.gameObject.SetActive(true);
+        Grid.instance.freeSlotsList.Remove(this);
     }
 
     public void RemovePreBall()

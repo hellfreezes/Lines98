@@ -17,10 +17,10 @@ public class GameController : MonoBehaviour {
     Text scoreField;
     [SerializeField]
     float animationMoveSpeedDelay = 0.1f;
+    [SerializeField]
+    Image[] nextBalls;
 
     bool isAnimationInProcess = false;
-
-    int score = 0;
 
     private List<Ball> preBalls = new List<Ball>();
 
@@ -44,10 +44,9 @@ public class GameController : MonoBehaviour {
         }
         instance = this;
 
-
-        GenerateBalls(); //Генерируем первые шары
+        GenerateBalls(ballsAtTurn); //Генерируем первые шары
         PlaceBalls();
-        GenerateBalls();
+        GenerateBalls(ballsAtTurn);
     }
 	
 	// Update is called once per frame
@@ -66,10 +65,11 @@ public class GameController : MonoBehaviour {
         }
     }
 
-    public void GenerateBalls()
+    public void GenerateBalls(int maxBalls)
     {
         int freeBalls = Grid.instance.freeSlotsList.Count;
-        for (int i = 1; i<= ballsAtTurn; i++)
+        //Debug.Log("Сободных ячеек: " + freeBalls);
+        for (int i = 0; i < maxBalls; i++)
         {
             if (freeBalls > 0)
             {
@@ -78,11 +78,13 @@ public class GameController : MonoBehaviour {
                 Ball b = new Ball();
                 b.code = code;
                 b.icon = balls[code];
+                nextBalls[i].sprite = balls[code];
                 b.coords = coords;
                 preBalls.Add(b); //Генерируем новый шарик на будущее и добавляем их в список сгенерированных
                 Grid.instance.AddPreBall(b);
                 //freeBalls--; //Контролирум количество будущих свободных слотов (и не трогаем число свободных слотов в настоящее время)
-            } else
+            }
+            else
             { //свободные слоты кончилис. прервать цикл
                 break;
             }
@@ -183,12 +185,13 @@ public class GameController : MonoBehaviour {
         Node currentNode = startNode;
         Ball startBall = startNode.ball.CopyBall();
         startNode.RemoveBall();
+
         while (currentNode != endNode) {
             i++;
             currentNode = path[i];
-            path[i].SetPreBall(startBall);
-            if (i>0)
-                path[i-1].RemovePreBall();
+
+            path[i].slot.GetComponent<Slot>().pathImage.gameObject.SetActive(true);
+
             yield return new WaitForSeconds(animationMoveSpeedDelay);
         }
         isAnimationInProcess = false; //Конец анимации
@@ -196,15 +199,25 @@ public class GameController : MonoBehaviour {
         currentNode = path[0];
         foreach(Node p in path)
         {
-            p.RemovePreBall();
+            p.slot.GetComponent<Slot>().pathImage.gameObject.SetActive(false);
         }
         if (!FindSameAndColapse(endNode)) // <--------------------------------ПРОВЕРКА на 5 в ряд!!!!!!!!!!!!!
         {
+            //Шар которым мы только что управляли не будет удален поэтому,
+            if (endNode.preBall != null) //На месте куда встал шар, должен был появится шар в новом ходу, то надо убрать оттуда пребалл и переназначит его в другое место
+            {
+                endNode.RemovePreBall();
+                GenerateBalls(1);
+            }
             if (!PlaceBalls()) //Пробуем разместить шарики. Если вернулось false то
             {
                 GameOver(); //Игра окончена
             } //если true то продолжаем
-            GenerateBalls(); //Генерируем шарики на след ход
+            if (Grid.instance.freeSlotsList.Count <= 0)
+            {
+                GameOver(); //Игра окончена если не осталось свободных слотов
+            }
+            GenerateBalls(ballsAtTurn); //Генерируем шарики на след ход
         }
         else
         {
@@ -220,7 +233,8 @@ public class GameController : MonoBehaviour {
 
     private void GameOver()
     {
-        Debug.Log("Игра окончена!");
+        //Debug.Log("Игра окончена!");
+        ScenesController.Instance.GameOver();
     }
 
     //Проверяем количество смежных шаров цветом идентичном шару from.
@@ -262,10 +276,9 @@ public class GameController : MonoBehaviour {
         {
             foreach (Node n in toColapse)
             {
-                //n.RemoveBall();
                 n.slot.GetComponent<Slot>().DieAndRemoveBall();
-                score += 1;
-                scoreField.text = "Score: " + score;
+                ScoreController.Instance.AddScore(1);
+                scoreField.text = "Score: " + ScoreController.Instance.Score;
             }
 
             return true;

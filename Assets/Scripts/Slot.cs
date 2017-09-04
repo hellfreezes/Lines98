@@ -8,10 +8,12 @@ public class Slot : MonoBehaviour {
 
     public Transform ballImage;
     public Animator anim;
+    public Transform pathImage;
 
     void Start()
     {
         ballImage = transform.Find("SlotButton").Find("Image");
+        pathImage = transform.Find("SlotButton").Find("PathImage");
         anim = ballImage.GetComponent<Animator>();
     }
 
