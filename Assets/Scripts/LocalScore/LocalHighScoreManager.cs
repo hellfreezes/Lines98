@@ -55,10 +55,10 @@ public class LocalHighScoreManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            nameDialog.SetActive(!nameDialog.activeSelf);
-        }
+		//if (Input.GetKeyDown(KeyCode.Escape))
+  //      {
+  //          nameDialog.SetActive(!nameDialog.activeSelf);
+  //      }
 	}
 
     public void EnterName()

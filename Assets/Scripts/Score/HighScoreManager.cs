@@ -4,6 +4,7 @@ using Mono.Data.Sqlite;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class HighScoreManager : MonoBehaviour {
     [SerializeField]
@@ -16,6 +17,15 @@ public class HighScoreManager : MonoBehaviour {
     GameObject scorePanel;
     [SerializeField]
     int numTopRanks = 10;
+
+    [SerializeField]
+    private int topRanks;
+    [SerializeField]
+    private int saveScores;
+    [SerializeField]
+    private InputField enterName;
+    [SerializeField]
+    private GameObject nameDialog;
 
     private static HighScoreManager instance;
 
@@ -56,6 +66,7 @@ public class HighScoreManager : MonoBehaviour {
 
     IEnumerator LoadOnlineScore()
     {
+        highScore.Clear();
         WWW itemsData = new WWW(getScoreURL);
 
  
@@ -119,6 +130,35 @@ public class HighScoreManager : MonoBehaviour {
         if (value.Contains("|"))
             value = value.Remove(value.IndexOf("|"));
         return value;
+    }
+
+    public void EnterName()
+    {
+        if (enterName.text != string.Empty)
+        {
+            int score = ScoreController.Instance.Score;
+            PostOnlineScore(enterName.text, score);
+            enterName.text = string.Empty;
+            ShowOnlineScores();
+            nameDialog.SetActive(false);
+            ScoreController.Instance.ResetScore();
+        }
+    }
+
+    private bool IsScoreIsHighScore(int score)
+    {
+        LoadOnlineScore();
+        int hsCount = highScore.Count;
+
+        if (highScore.Count > 0)
+        {
+            HighScore lowestScore = highScore[highScore.Count - 1];
+            if (lowestScore != null && saveScores > 0 && highScore.Count >= saveScores && score > lowestScore.Score)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     void ShowOnlineScores()

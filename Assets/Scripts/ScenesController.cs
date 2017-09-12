@@ -42,4 +42,9 @@ public class ScenesController : MonoBehaviour {
     {
         SceneManager.LoadScene(2);
     }
+
+    public void GlobalScores()
+    {
+        SceneManager.LoadScene(3);
+    }
 }
