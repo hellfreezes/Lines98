@@ -27,7 +27,11 @@ public class GlobalHighScoreManager : MonoBehaviour {
     [SerializeField]
     private GameObject nameDialog;
 
+    private int scoreToAdd;
+    private string nameToAdd;
 
+    private delegate void OnGetScore();
+    //private OnGetScore cbOnGetScore;
     private string[] items;
     private string connectionString;
     private List<HighScore> highScore = new List<HighScore>();
@@ -55,10 +59,7 @@ public class GlobalHighScoreManager : MonoBehaviour {
         //InsertScore("Rin", 81);
         //InsertScore("Putin", 53);
         //InsertScore("Stalin", 153);
-        if (IsScoreIsHighScore(ScoreController.Instance.Score))
-        {
-            nameDialog.SetActive(true);
-        }
+        IsScoreIsHighScore();
         ShowScore();
     }
 
@@ -76,7 +77,7 @@ public class GlobalHighScoreManager : MonoBehaviour {
         if (enterName.text != string.Empty)
         {
             int score = ScoreController.Instance.Score;
-            StartCoroutine(InsertScore(enterName.text, score));
+            InsertScore(enterName.text, score);
             enterName.text = string.Empty;
             ShowScore();
             nameDialog.SetActive(false);
@@ -84,25 +85,41 @@ public class GlobalHighScoreManager : MonoBehaviour {
         }
     }
 
-    private bool IsScoreIsHighScore(int score)
+    private void IsScoreIsHighScore()
     {
-        StartCoroutine(GetScore());
+        StartCoroutine(GetScore(ShowEnterNameDialog));
+        
+    }
+
+    private void ShowEnterNameDialog()
+    {
         int hsCount = highScore.Count;
 
         if (highScore.Count > 0)
         {
             HighScore lowestScore = highScore[highScore.Count - 1];
-            if (lowestScore != null && saveScores > 0 && highScore.Count >= saveScores && score > lowestScore.Score)
+            if (lowestScore != null && saveScores > 0 && highScore.Count >= saveScores && ScoreController.Instance.Score > lowestScore.Score)
             {
-                return true;
+                nameDialog.SetActive(true);
             }
         }
-        return false;
     }
 
-    IEnumerator InsertScore(string name, int newScore)
+    private void InsertScore(string name, int newScore)
     {
-        StartCoroutine(GetScore());
+        StartCoroutine(GetScore(TryPostScore));
+        nameToAdd = name;
+        scoreToAdd = newScore;
+    }
+
+    private void TryPostScore()
+    {
+        if (nameToAdd != string.Empty && scoreToAdd > 0) 
+            StartCoroutine(PostScoreToBase(nameToAdd, scoreToAdd));
+    }
+
+    IEnumerator PostScoreToBase(string name, int newScore)
+    {
         int hsCount = highScore.Count;
 
         if (highScore.Count > 0)
@@ -124,6 +141,9 @@ public class GlobalHighScoreManager : MonoBehaviour {
             WWW www = new WWW(postScoreURL, form);
             yield return www;
 
+            nameToAdd = string.Empty;
+            scoreToAdd = 0;
+
             if (!string.IsNullOrEmpty(www.error))
             {   //Ошибка подключения. Прервать процесс!
                 Debug.LogError("Ошибка при подключении: " + www.error);
@@ -132,7 +152,7 @@ public class GlobalHighScoreManager : MonoBehaviour {
         }
     }
 
-    IEnumerator GetScore()
+    IEnumerator GetScore(OnGetScore cbAction)
     {
         highScore.Clear();
         WWW itemsData = new WWW(getScoreURL);
@@ -172,12 +192,29 @@ public class GlobalHighScoreManager : MonoBehaviour {
             }
 
             highScore.Sort(); //сортировка тут!
+
+            cbAction.Invoke();
         }
     }
 
     private void FillScoreTable()
     {
+        foreach (GameObject score in GameObject.FindGameObjectsWithTag("Score"))
+        {
+            Destroy(score);
+        }
 
+        for (int i = 0; i < topRanks; i++)
+        {
+            if (i <= highScore.Count - 1)
+            {
+                GameObject tmpObj = Instantiate(scorePrefab);
+                HighScore tmpScore = highScore[i];
+                tmpObj.GetComponent<HighScoreScript>().SetScore(tmpScore.Name, tmpScore.Score.ToString(), "#" + (i + 1).ToString());
+                tmpObj.transform.SetParent(scoreParent.transform);
+                tmpObj.GetComponent<RectTransform>().localScale = new Vector3(1, 1, 1);
+            }
+        }
     }
 
 
@@ -198,31 +235,16 @@ public class GlobalHighScoreManager : MonoBehaviour {
 
     private void ShowScore()
     {
-        StartCoroutine(GetScore());
-
-
-        foreach (GameObject score in GameObject.FindGameObjectsWithTag("Score"))
-        {
-            Destroy(score);
-        }
-
-        for (int i = 0; i < topRanks; i++)
-        {
-            if (i <= highScore.Count - 1)
-            {
-                GameObject tmpObj = Instantiate(scorePrefab);
-                HighScore tmpScore = highScore[i];
-                tmpObj.GetComponent<HighScoreScript>().SetScore(tmpScore.Name, tmpScore.Score.ToString(), "#" + (i + 1).ToString());
-                tmpObj.transform.SetParent(scoreParent.transform);
-                tmpObj.GetComponent<RectTransform>().localScale = new Vector3(1, 1, 1);
-            }
-        }
+        StartCoroutine(GetScore(FillScoreTable));
     }
 
     private void DeleteExtraScore()
     {
-        StartCoroutine(GetScore());
+        StartCoroutine(GetScore(InitDeleteExtra));
+    }
 
+    private void InitDeleteExtra()
+    {
         if (saveScores <= highScore.Count)
         {
             int deleteCount = highScore.Count - saveScores;

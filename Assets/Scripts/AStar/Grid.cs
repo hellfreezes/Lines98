@@ -123,6 +123,7 @@ public class Grid : MonoBehaviour {
         return new Vector2(x, y);
     }
 
+    //TODO: Иногда тут вылазит ошибка выхода за пределы индекса массива. Проверить почему или поставить проверку на выход перед реализацией
     public void AddPreBall(Ball ball)
     {
         int x = (int)ball.coords.x;
