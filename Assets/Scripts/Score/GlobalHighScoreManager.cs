@@ -88,18 +88,20 @@ public class GlobalHighScoreManager : MonoBehaviour {
     private void IsScoreIsHighScore()
     {
         StartCoroutine(GetScore(ShowEnterNameDialog));
-        
     }
 
     private void ShowEnterNameDialog()
     {
         int hsCount = highScore.Count;
-
+        
         if (highScore.Count > 0)
         {
             HighScore lowestScore = highScore[highScore.Count - 1];
-            if (lowestScore != null && saveScores > 0 && highScore.Count >= saveScores && ScoreController.Instance.Score > lowestScore.Score)
+            //Debug.Log("lowestScore:"+ lowestScore+"; hC:"+highScore.Count+"; sS:"+saveScores+"; score:"+ ScoreController.Instance.Score+"; lowestScore:"+ lowestScore.Score);
+            //Debug.Log("First:" + (lowestScore != null) + "; Second:" + (highScore.Count >= saveScores) + "; Third:" + (ScoreController.Instance.Score > lowestScore.Score));
+            if (lowestScore != null && saveScores > 0 && highScore.Count < saveScores && ScoreController.Instance.Score > lowestScore.Score)
             {
+                //Debug.Log("Cond");
                 nameDialog.SetActive(true);
             }
         }

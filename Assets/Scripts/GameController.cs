@@ -237,6 +237,12 @@ public class GameController : MonoBehaviour {
         ScenesController.Instance.GameOver();
     }
 
+    public void EndGameWithScore(int setScore)
+    {
+        ScoreController.Instance.AddScore(setScore);
+        GameOver();
+    }
+
     //Проверяем количество смежных шаров цветом идентичном шару from.
     public bool FindSameAndColapse(Node from)
     {
